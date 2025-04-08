@@ -64,6 +64,10 @@ bash
 ```bash
 npm install jspdf html2canvas
 
-5. Run the development server
+5.Install ESLint for code linting
+```bash
+npm install eslint eslint-config-next
+
+6. Run the development server
 bash
 ```npm run dev
