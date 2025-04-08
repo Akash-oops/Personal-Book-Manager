@@ -1,37 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+1.What I Built? 
+Created a Personal Bookmark Manager web app that allows users to: 
+Save, edit, and delete bookmarks. 
+Organize bookmarks by categories.
+Search and sort bookmarks.
+It’s built with Next.js, TypeScript, and Tailwind CSS for a clean and responsive UI.
 
-## Getting Started
+2.How to Run the Project
+->Clone this repository:
+```bash
+git clone https://github.com/your-username/bookmark-manager.git
+cd "your folder path"
 
-First, run the development server:
+Install dependencies:
+```bash
+npm install
 
+Run the development server:
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3.Which Features Implemented 
+->Add and delete bookmarks 
+->Edit bookmarks 
+->Custom category creation 
+-> Sort bookmarks by date or title 
+->Search bookmarks by title 
+->URL validation before saving 
+->Dark mode
 
-## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+4.Challenges Faced 
+->Managing Edit Mode Cleanly 
+->Reliable URL Validation 
+->Dynamic Sorting and Searching 
+->Custom Categories with Persistence
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-"# Personal-Book-Manager" 
+5.What I Learned 
+->How to build a full-featured React app with Next.js and TypeScript from scratch. 
+->Using localStorage for client-side persistence. 
+->Creating responsive and clean UIs with Tailwind CSS. 
+->Managing multiple states cleanly (filters, sort, dark mode, edit mode). 
+->Generating PDFs from HTML using jsPDF and html2canvas.
