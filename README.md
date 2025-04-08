@@ -71,3 +71,10 @@ npm install eslint eslint-config-next
 6. Run the development server
 bash
 ```npm run dev
+
+NOTE:
+Technology Used(Should be installed)
+Next.js	React-based framework for building fast, full-stack web apps
+React	Frontend JavaScript library for building UI components
+TypeScript	Typed superset of JavaScript for better developer experience & safety
+Tailwind CSS	Utility-first CSS framework for responsive and custom styling
