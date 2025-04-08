@@ -44,3 +44,26 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 ->Creating responsive and clean UIs with Tailwind CSS. 
 ->Managing multiple states cleanly (filters, sort, dark mode, edit mode). 
 ->Generating PDFs from HTML using jsPDF and html2canvas.
+
+
+Dependencies Used:
+1. Create the project
+```bash
+npx create-next-app@latest bookmark-manager --typescript
+
+2. Navigate into project
+```bash
+cd bookmark-manager
+
+3. Install Tailwind CSS
+bash
+```npm install -D tailwindcss postcss autoprefixer
+  npx tailwindcss init -p
+
+4. Install PDF dependencies
+```bash
+npm install jspdf html2canvas
+
+5. Run the development server
+bash
+```npm run dev
