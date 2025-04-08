@@ -1,103 +1,337 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
+
+interface Bookmark {
+  id: string;
+  title: string;
+  url: string;
+  category: string;
+  createdAt: Date;
+}
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+  const [title, setTitle] = useState("");
+  const [url, setUrl] = useState("");
+  const [category, setCategory] = useState("");
+  const [customCategories, setCustomCategories] = useState<string[]>(["Tech", "Education", "Entertainment"]);
+  const [newCategory, setNewCategory] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editUrl, setEditUrl] = useState("");
+  const [editCategory, setEditCategory] = useState("");
+  const [filterCategory, setFilterCategory] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortOption, setSortOption] = useState("date");
+  const [darkMode, setDarkMode] = useState(false);
+  const bookmarksRef = useRef<HTMLDivElement>(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+  useEffect(() => {
+    const saved = localStorage.getItem("bookmarks");
+    if (saved) {
+      const parsed: Bookmark[] = JSON.parse(saved);
+      const withDates = parsed.map((b) => ({
+        ...b,
+        createdAt: new Date(b.createdAt),
+      }));
+      setBookmarks(withDates);
+    }
+
+    const storedMode = localStorage.getItem("darkMode");
+    if (storedMode) setDarkMode(storedMode === "true");
+
+    const storedCategories = localStorage.getItem("categories");
+    if (storedCategories) setCustomCategories(JSON.parse(storedCategories));
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("bookmarks", JSON.stringify(bookmarks));
+  }, [bookmarks]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", darkMode);
+    localStorage.setItem("darkMode", darkMode.toString());
+  }, [darkMode]);
+
+  useEffect(() => {
+    localStorage.setItem("categories", JSON.stringify(customCategories));
+  }, [customCategories]);
+
+  const isValidUrl = (url: string) => {
+    try {
+      new URL(url);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const addBookmark = () => {
+    if (!title || !url || !category) return;
+    if (!isValidUrl(url)) {
+      alert("Please enter a valid URL.");
+      return;
+    }
+
+    const newBookmark: Bookmark = {
+      id: Date.now().toString(),
+      title,
+      url,
+      category,
+      createdAt: new Date(),
+    };
+
+    setBookmarks([...bookmarks, newBookmark]);
+    setTitle("");
+    setUrl("");
+    setCategory("");
+  };
+
+  const deleteBookmark = (id: string) => {
+    const confirmDelete = window.confirm("Are you sure?");
+    if (confirmDelete) {
+      setBookmarks(bookmarks.filter((b) => b.id !== id));
+    }
+  };
+
+  const startEditing = (bookmark: Bookmark) => {
+    setEditingId(bookmark.id);
+    setEditTitle(bookmark.title);
+    setEditUrl(bookmark.url);
+    setEditCategory(bookmark.category);
+  };
+
+  const saveEdit = (id: string) => {
+    const updated = bookmarks.map((b) =>
+      b.id === id ? { ...b, title: editTitle, url: editUrl, category: editCategory } : b
+    );
+    setBookmarks(updated);
+    setEditingId(null);
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+  };
+
+  const addCustomCategory = () => {
+    if (newCategory && !customCategories.includes(newCategory)) {
+      setCustomCategories([...customCategories, newCategory]);
+      setNewCategory("");
+    }
+  };
+
+  const downloadPDF = async () => {
+    const input = bookmarksRef.current;
+    if (input) {
+      const canvas = await html2canvas(input);
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF();
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.save("bookmarks.pdf");
+    }
+  };
+
+  // Filtering + Searching
+  const filtered = filterCategory === "All"
+    ? bookmarks
+    : bookmarks.filter((b) => b.category === filterCategory);
+
+  const searched = filtered.filter((b) =>
+    b.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const sorted = [...searched].sort((a, b) => {
+    if (sortOption === "title") return a.title.localeCompare(b.title);
+    return b.createdAt.getTime() - a.createdAt.getTime(); // default: newest first
+  });
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-white dark:bg-gray-900 text-black dark:text-white transition-colors">
+      {/* Dark Mode Toggle */}
+      <button
+        onClick={() => setDarkMode(!darkMode)}
+        className="absolute top-4 right-4 p-2 bg-gray-300 dark:bg-gray-700 rounded"
+      >
+        {darkMode ? "🌞 Light" : "🌙 Dark"}
+      </button>
+
+      <h1 className="text-2xl font-bold mb-6">Bookmark Manager</h1>
+
+      {/* Add Bookmark Form */}
+      <div className="w-full max-w-md space-y-4">
+        <input
+          type="text"
+          placeholder="Title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-600"
+        />
+        <input
+          type="url"
+          placeholder="URL"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-600"
+        />
+        <select
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-600"
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+          <option value="">Select Category</option>
+          {customCategories.map((cat) => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
+        </select>
+        <button
+          onClick={addBookmark}
+          className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700"
         >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+          Add Bookmark
+        </button>
+      </div>
+
+      {/* Custom Category Input */}
+      <div className="w-full max-w-md mt-4 flex gap-2">
+        <input
+          type="text"
+          placeholder="New category"
+          value={newCategory}
+          onChange={(e) => setNewCategory(e.target.value)}
+          className="flex-1 p-2 border rounded dark:bg-gray-800 dark:border-gray-600"
+        />
+        <button
+          onClick={addCustomCategory}
+          className="bg-purple-600 text-white px-3 rounded hover:bg-purple-700"
         >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          Add
+        </button>
+      </div>
+
+      {/* Filter + Search + Sort */}
+      <div className="w-full max-w-md mt-6 space-y-2">
+        <select
+          value={filterCategory}
+          onChange={(e) => setFilterCategory(e.target.value)}
+          className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-600"
+        >
+          <option value="All">All Categories</option>
+          {customCategories.map((cat) => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
+        </select>
+
+        <input
+          type="text"
+          placeholder="Search..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-600"
+        />
+
+        <select
+          value={sortOption}
+          onChange={(e) => setSortOption(e.target.value)}
+          className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-600"
+        >
+          <option value="date">Sort by Date</option>
+          <option value="title">Sort by Title</option>
+        </select>
+      </div>
+
+      {/* PDF Button */}
+      {sorted.length > 0 && (
+        <button
+          onClick={downloadPDF}
+          className="mt-6 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+        >
+          Download PDF
+        </button>
+      )}
+
+      {/* Bookmark List */}
+      <div ref={bookmarksRef} className="w-full max-w-md mt-6 space-y-4">
+        <h2 className="text-xl font-semibold">Your Bookmarks</h2>
+        {sorted.length === 0 ? (
+          <p>No bookmarks found.</p>
+        ) : (
+          sorted.map((bookmark) => (
+            <div
+              key={bookmark.id}
+              className="p-4 border rounded shadow-sm hover:shadow-md transition relative dark:bg-gray-800 dark:border-gray-600"
+            >
+              {editingId === bookmark.id ? (
+                <>
+                  <input
+                    type="text"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    className="w-full p-2 border rounded mb-2 dark:bg-gray-700"
+                  />
+                  <input
+                    type="url"
+                    value={editUrl}
+                    onChange={(e) => setEditUrl(e.target.value)}
+                    className="w-full p-2 border rounded mb-2 dark:bg-gray-700"
+                  />
+                  <select
+                    value={editCategory}
+                    onChange={(e) => setEditCategory(e.target.value)}
+                    className="w-full p-2 border rounded mb-2 dark:bg-gray-700"
+                  >
+                    {customCategories.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                  <div className="flex justify-end gap-2 mt-2">
+                    <button onClick={() => saveEdit(bookmark.id)} className="text-green-600 hover:text-green-800">
+                      ✅
+                    </button>
+                    <button onClick={cancelEdit} className="text-gray-500 hover:text-gray-700">
+                      ❌
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p
+  className="font-bold truncate w-full"
+  title={bookmark.title}
+>
+  {bookmark.title}
+</p>
+<a
+  href={bookmark.url}
+  target="_blank"
+  rel="noopener noreferrer"
+  className="text-blue-600 underline truncate w-full block"
+  title={bookmark.url}
+>
+  {bookmark.url}
+</a>
+                  <p className="text-sm text-gray-600">Category: {bookmark.category}</p>
+                  <p className="text-xs text-gray-400">Added on: {bookmark.createdAt.toLocaleString()}</p>
+
+                  <div className="absolute top-2 right-2 flex gap-2">
+                    <button onClick={() => deleteBookmark(bookmark.id)} className="text-red-500 hover:text-red-700">
+                      ❌
+                    </button>
+                    <button onClick={() => startEditing(bookmark)} className="text-yellow-500 hover:text-yellow-600">
+                      ✏️
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 }
